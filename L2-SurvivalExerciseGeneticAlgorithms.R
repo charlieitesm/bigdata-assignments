@@ -119,6 +119,15 @@ fitness.generic.2 <- function(x) {
     if(x[4] == 0 && x[12] == 1) {
       partial.result <- partial.result - 200
     }
+    if (x[31] == 0 && x[33] == 1 ) {
+      partial.result <- partial.result -14
+    }
+    if (x[31] == 1 && x[33] == 1 ) {
+      partial.result <- partial.result  + 30
+    }
+    if (x[9] ==1 && (x[10] == 1  || x[3] ==1)) {
+      partial.result <- partial.result +20
+    }
     
     # Transform to negative to make it less
     return(-partial.result)
