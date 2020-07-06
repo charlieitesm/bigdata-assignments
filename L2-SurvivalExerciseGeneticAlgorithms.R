@@ -70,9 +70,37 @@ items <- data.frame(
              0.1)
 )
 
+evaluate_genetic_algorithm <- function(items,
+                                       fitness.function,
+                                       title = "RESULTS",
+                                       verbose = F) {
+
+    ga.results <- rbga.bin(size = 38,
+                           popSize = 200,
+                           mutationChance = .01,
+                           elitism = 4,
+                           iters = 200,
+                           evalFunc = fitness.function,
+                           verbose = verbose)
+
+    best.results <- ga.results$population[ga.results$evaluations == min(ga.results$best),][1,]
+    best.items <- items$item[best.results == 1]
+
+    items.weight <- best.results %*% items$weight
+
+    survivalpoints <- best.results %*% items$survivalpoints
+
+    print(paste0("*************** ", title," ****************", collapse = " "))
+    print(paste0("Best items before improvements for weight ", weight.limit, ": ", length(best.items), collapse = " "))
+    print(best.items)
+    print(paste0("Weight of items: ", items.weight, collapse = " "))
+    print(paste0("Survival points: ", survivalpoints, collapse = " "))
+
+}
+
 
 # Fitness function, less is better
-fitness.generic <- function(x, weight.limit = 20) {
+fitness.generic <- function(x) {
 
   # Dot product
 
@@ -90,34 +118,14 @@ fitness.generic <- function(x, weight.limit = 20) {
   }
 }
 
-ga.before.improvements <- rbga.bin(size = 38,
-                     popSize = 200,
-                     mutationChance = .01,
-                     elitism = 4,
-                     iters = 200,
-                     evalFunc = fitness.generic,
-                     verbose = F)
-
-best.before.improvements <- ga.before.improvements$population[ga.before.improvements$evaluations == min(ga.before.improvements$best),][1,]
-best.items.before <- items$item[best.before.improvements == 1]
-#best.items.before
-#length(best.items)
-
-items.weight.before <- best.before.improvements %*% items$weight
-#items.weight
-
-survivalpoints.before <- best.before.improvements %*% items$survivalpoints
-#survivalpoints
-
-print("*************** BEFORE IMPROVEMENTS ****************")
-print(paste0("Best items before improvements for weight 20: ", length(best.items.before), collapse = " "))
-print(best.items.before)
-print(paste0("Weight of items: ", items.weight.before, collapse = " "))
-print(paste0("Survival points: ", survivalpoints.before, collapse = " "))
-
+weight.limit = 20
+evaluate_genetic_algorithm(items = items,
+                           fitness.function = fitness.generic,
+                           title = "BEFORE IMPROVEMENTS - Weight: 20",
+                           verbose = F)
 
 # Fitness function improved
-fitness.improved <- function(x, weight.limit = 20) {
+fitness.improved <- function(x) {
 
   # Dot product
   items.weight <- x %*% items$weight
@@ -153,23 +161,20 @@ fitness.improved <- function(x, weight.limit = 20) {
   }
 }
 
-ga.after.improvements <- rbga.bin(size = 38,
-                                 popSize = 200,
-                                 mutationChance = .01,
-                                 elitism = 4,
-                                 iters = 200,
-                                 evalFunc = fitness.improved,
-                                 verbose = F)
+weight.limit = 20
+evaluate_genetic_algorithm(items = items,
+                           fitness.function = fitness.improved,
+                           title = "AFTER IMPROVEMENTS - Weight: 20",
+                           verbose = F)
 
-best.after.improvements <- ga.after.improvements$population[ga.after.improvements$evaluations == min(ga.after.improvements$best),][1,]
-best.items.after <- items$item[best == 1]
+weight.limit = 30
+evaluate_genetic_algorithm(items = items,
+                           fitness.function = fitness.improved,
+                           title = "AFTER IMPROVEMENTS - Weight: 30",
+                           verbose = F)
 
-items.weight.after <- best.after.improvements %*% items$weight
-
-survivalpoints.after <- best.after %*% items$survivalpoints
-
-print("*************** After IMPROVEMENTS ****************")
-print(paste0("Best items after improvements for weight 20: ", length(best.items.after), collapse=" "))
-print(best.items.after)
-print(paste0("Weight of items:", items.weight.after, collapse = " "))
-print(paste0("Survival points:", survivalpoints.after, collapse = " "))
+weight.limit = 15
+evaluate_genetic_algorithm(items = items,
+                           fitness.function = fitness.improved,
+                           title = "AFTER IMPROVEMENTS - Weight: 15",
+                           verbose = F)
