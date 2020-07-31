@@ -55,3 +55,10 @@ Para este caso, tenemos 20 alumnos y 11 medidas. Esto representa un cromosoma bi
 9. Entrenar una red neuronal con los datos etiquetados para 900 alumnos
 10. Con el entrenamiento de la red, predecir las etiquetas para los 100 alumnos restantes e identificar a los desertores
 11. Disenar estrategias para que sean probadas por el algoritmo genetico
+
+---
+
+## Features
+
+Definir la lista de features, cómo los codificaremos y de qué manera los escalaremos:
+1. TBD
