@@ -33,6 +33,12 @@ load("perfilAlumnos.R")
 
 datos.alumnos.integrados <- perfil.alumnos
 
+# Cambiar a factores las columnas de valores discretos/categorigos
+datos.alumnos.integrados$genero <- as.factor(datos.alumnos.integrados$genero)
+datos.alumnos.integrados$evaluacion.socioeconomica <- as.factor(datos.alumnos.integrados$evalucion.socioeconomica)
+datos.alumnos.integrados$evalucion.socioeconomica <- NULL # Arreglar typo en nombre columna
+colnames(datos.alumnos.integrados)
+
 
 
 load("AsistenciasTotales.R")
@@ -51,7 +57,7 @@ asistencias.totales.filtered <- lapply(asistencias.totales, function(m){
     })
 
 # Add the column to the dataframe
-datos.alumnos.integrados$asistencias.totales <- asistencias.totales.filtered
+datos.alumnos.integrados$asistencias.totales <- unlist(asistencias.totales.filtered)
 head(datos.alumnos.integrados)
 
 
@@ -67,7 +73,7 @@ load("ResultadosExamenes.R")
 resultados.examenes.filtrados <- lapply(resultados.examenes.totales, function(m){
     mean(m[,1:12])
 })
-datos.alumnos.integrados$resultados.examenes <- resultados.examenes.filtrados
+datos.alumnos.integrados$resultados.examenes <- unlist(resultados.examenes.filtrados)
 head(datos.alumnos.integrados)
 
 
@@ -84,7 +90,7 @@ resultados.trabajos.filtrados <- lapply(resultados.trabajos.totales, function(m)
     mean(m[,1:12])
 })
 #head(resultados.trabajos.filtrados)
-datos.alumnos.integrados$resultados.trabajos <- resultados.trabajos.filtrados
+datos.alumnos.integrados$resultados.trabajos <- unlist(resultados.trabajos.filtrados)
 head(datos.alumnos.integrados)
 
 
@@ -101,7 +107,7 @@ uso.biblioteca.filtrados <- lapply(uso.biblioteca.totales, function(m){
     round(mean(m[,1:12]))
 })
 #head(uso.biblioteca.filtrados)
-datos.alumnos.integrados$uso.biblioteca <- uso.biblioteca.filtrados
+datos.alumnos.integrados$uso.biblioteca <- unlist(uso.biblioteca.filtrados)
 head(datos.alumnos.integrados)
 
 
@@ -117,7 +123,7 @@ uso.plataforma.filtrado <- lapply(uso.plataforma.totales, function(m){
     round(mean(m[,1:12]))
 })
 #head(uso.plataforma.filtrado)
-datos.alumnos.integrados$uso.plataforma <- uso.plataforma.filtrado
+datos.alumnos.integrados$uso.plataforma <- unlist(uso.plataforma.filtrado)
 head(datos.alumnos.integrados)
 
 
@@ -132,7 +138,7 @@ apartado.libros.filtrado <- lapply(separacion.libros.totales, function(m){
     sum(m[,1:12])
 })
 #head(apartado.libros.filtrado)
-datos.alumnos.integrados$apartado.libros <- apartado.libros.filtrado
+datos.alumnos.integrados$apartado.libros <- unlist(apartado.libros.filtrado)
 head(datos.alumnos.integrados)
 
 
@@ -141,7 +147,7 @@ load("Becas.R")
 #class(distribucion.becas) # Vector of 1000 0-1 values
 #length(distribucion.becas)
 #head(distribucion.becas)
-datos.alumnos.integrados$becado <- distribucion.becas
+datos.alumnos.integrados$becado <- as.factor(distribucion.becas)
 head(datos.alumnos.integrados)
 
 
@@ -159,7 +165,7 @@ registro.pagos.filtrados <- lapply(registro.pagos, function(m){
     sum(m[,1:2])
 })
 #head(registro.pagos.filtrados)
-datos.alumnos.integrados$historial.pagos <- registro.pagos.filtrados
+datos.alumnos.integrados$historial.pagos <- unlist(registro.pagos.filtrados)
 head(datos.alumnos.integrados)
 
 
@@ -167,11 +173,13 @@ load("CambioCarrera.R")
 #class(cambio.carrera) # Vector of 1000 0-1 values
 #length(cambio.carrera)
 #head(cambio.carrera)
-datos.alumnos.integrados$cambio.carrera <- cambio.carrera
+datos.alumnos.integrados$cambio.carrera <- as.factor(cambio.carrera)
 head(datos.alumnos.integrados)
 
 
 # --- 2. Feature engineering - Escoger que features se usaran
+summary(datos.alumnos.integrados)
+
 
 
 
