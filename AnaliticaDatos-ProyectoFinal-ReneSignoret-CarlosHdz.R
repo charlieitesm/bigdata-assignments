@@ -17,7 +17,9 @@
 getwd()
 
 # Modificar esto a la carpeta donde se encuentran los datasets
-dataset.folder = "C:/Users/Charlie/OneDrive\ -\ Instituto\ Tecnologico\ y\ de\ Estudios\ Superiores\ de\ Monterrey/BigData/FinalProject/ProfessorFiles"
+dataset.folder.rene = "/home/renesignoret/Documents/bigdata-assignments/ProfessorFiles"
+dataset.folder.carlos = "C:/Users/Charlie/OneDrive\ -\ Instituto\ Tecnologico\ y\ de\ Estudios\ Superiores\ de\ Monterrey/BigData/FinalProject/ProfessorFiles"
+dataset.folder <- dataset.folder.rene
 
 setwd(dataset.folder)
 
@@ -186,7 +188,6 @@ summary(datos.alumnos.integrados)
 # --- 3. Feature scaling
 
 
-
 # --- 4. Dataframes para alumnos
 
 
@@ -195,7 +196,20 @@ save(datos.alumnos.integrados, file="datos.alumnos.integrados.R")
 
 # --- 5. Train/test split 90%/10%
 
+#Usemos esta semilla para mantener datos constantes
+set.seed(1234)
+ind <-
+  sample(
+    x = c(1, 2),
+    size = nrow(datos.alumnos.integrados),
+    replace = TRUE,
+    prob = c(.9, .1)
+  )
 
+training.set <- datos.alumnos.integrados[ind == 1, ]
+summary(training.set)
+test.set <- datos.alumnos.integrados[ind == 2 , ]
+summary(test.set)
 
 # --- 6. Generacion de labels usando K-Means
 
