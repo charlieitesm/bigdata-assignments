@@ -12,7 +12,8 @@
 #
 # Agosto 2020
 ################################
-
+install.packages("neuralnet")
+library(neuralnet)
 
 getwd()
 
@@ -186,7 +187,7 @@ head(datos.alumnos.integrados)
 summary(datos.alumnos.integrados)
 
 # Salvamos los resultados completos antes de remover columnas
-save(datos.alumnos.integrados, file="datos.alumnos.integrados.noscaling.R")
+#save(datos.alumnos.integrados, file="datos.alumnos.integrados.noscaling.R")
 
 
 
@@ -194,45 +195,80 @@ save(datos.alumnos.integrados, file="datos.alumnos.integrados.noscaling.R")
 # --- 3. Dataframes para alumnos
 
 # Salvamos los resultados
-save(datos.alumnos.integrados, file="datos.alumnos.integrados.noscaling.R")
+#save(datos.alumnos.integrados, file="datos.alumnos.integrados.noscaling.R")
 
 # --- 4. Train/test split 90%/10%
 
 
 
 #Usemos esta semilla para mantener datos constantes
-set.seed(1234)
-ind <-
-  sample(
-    x = c(1, 2),
-    size = nrow(datos.alumnos.integrados),
-    replace = TRUE,
-    prob = c(.9, .1)
-  )
-
+train.test.split <- function(nrows, split=c(0.9, 0.1)) {
+  set.seed(1234)
+  ind <- sample(
+      x = c(1, 2),
+      size = nrows,
+      replace = TRUE,
+      prob = split
+    )
+  return(ind)
+}
+ind = train.test.split(nrows = nrow(datos.alumnos.integrados),
+                       split = c(0.9, 0.1))
 training.set <- datos.alumnos.integrados[ind == 1, ]
 summary(training.set)
 test.set <- datos.alumnos.integrados[ind == 2 , ]
 summary(test.set)
 
 # --- 5. Generacion de labels usando K-Means
+# ------ DELETE BEFORE MERGE TO MASTER ------
+set.seed(1234)
+kmeans.results <- kmeans(x = training.set,
+                         centers = 4)
+delete.me <- training.set
+delete.me$cluster <- kmeans.results$cluster
+summary(delete.me[delete.me$cluster==1,])
+summary(delete.me[delete.me$cluster==2,])
+summary(delete.me[delete.me$cluster==3,])
+summary(delete.me[delete.me$cluster==4,])
 
-
+# El cluster 1 parece tener un score de asistencia menor asi que usemos eso como
+#  etiqueta para los desertores
+delete.me$es.desertor <- as.factor(ifelse(delete.me$cluster == 1, 1, 0))
+# ----- /DELETE ----
 
 # --- 2. Feature scaling en preparacion para Red neuronal
-summary(datos.alumnos.integrados)
 
-escalar.data.frame <- function(df) {
+preparar.data.frame.nn <- function(df) {
     # Esta funcion revisara si el dataframe contiene las columnas a escalar y
     #  si las tiene, procedera a escalarlas. Esto nos permite reutilizar la
-    #  la escalacion para diferentes dataframes
+    #  la escalacion para diferentes dataframes.
+    # Convertira los campos que son factores a numeros
     
-    escalar.a.valor.max <- function(columna) {
+    escalar.columna <- function(columna) {
         # Regresa el valor de las columnas escalados al valor maximo encontrado
-        columna / max(columna)
+        #columna / max(columna)
+        scale(columna)
     }
     
     columnas.en.df <- colnames(df)
+    
+    # Columnas factores a integer, aquellos que representan una variable bool
+    #  se hace el shift para mantener sus valores 0-1
+    if("es.desertor" %in% columnas.en.df) {
+      df$es.desertor <- as.integer(df$es.desertor) - 1
+    }
+    if("cambio.carrera" %in% columnas.en.df) {
+      df$cambio.carrera <- as.integer(df$cambio.carrera) - 1
+    }
+    if("becado" %in% columnas.en.df) {
+      df$becado <- as.integer(df$becado) - 1
+    }
+    if("genero" %in% columnas.en.df) {
+      df$genero <- as.integer(df$genero)
+    }
+    if("evaluacion.socioeconomica" %in% columnas.en.df) {
+      df$evaluacion.socioeconomica <- as.integer(df$evaluacion.socioeconomica)
+    }
     
     # La calificacion maxima en los examenes de admision es de 80, usemos eso para
     #  escalar las columnas
@@ -258,43 +294,88 @@ escalar.data.frame <- function(df) {
         df$historial.pagos <- df$historial.pagos / 16
     }
     
-    # Este campo es un factor, puede que no querramos escalarlo
-    # Evaluacion socioeconomica, los menos privilegiados tienen 4
-    #if("evaluacion.socioeconomica" %in% columnas.en.df) {
-    #    df$evaluacion.socioeconomica <- df / 4
-    #}
-    
     # Para las siguientes, tomamos el maximo valor encontrado para poder escalarlo
     if("edad.ingreso" %in% columnas.en.df) {
-        df$edad.ingreso <- escalar.a.valor.max(df$edad.ingreso)
+        df$edad.ingreso <- escalar.columna(df$edad.ingreso)
     }
     if("nota.conducta" %in% columnas.en.df) {
-        df$nota.conducta <- escalar.a.valor.max(df$nota.conducta)
+        df$nota.conducta <- escalar.columna(df$nota.conducta)
     }
     if("resultados.examenes" %in% columnas.en.df) {
-        df$resultados.examenes <- escalar.a.valor.max(df$resultados.examenes)
+        df$resultados.examenes <- escalar.columna(df$resultados.examenes)
     }
     if("resultados.trabajos" %in% columnas.en.df) {
-        df$resultados.trabajos <- escalar.a.valor.max(df$resultados.trabajos)
+        df$resultados.trabajos <- escalar.columna(df$resultados.trabajos)
     }
     if("uso.biblioteca" %in% columnas.en.df) {
-        df$uso.biblioteca <- escalar.a.valor.max(df$uso.biblioteca)
+        df$uso.biblioteca <- escalar.columna(df$uso.biblioteca)
     }
     if("uso.plataforma" %in% columnas.en.df) {
-        df$uso.plataforma <- escalar.a.valor.max(df$uso.plataforma)
+        df$uso.plataforma <- escalar.columna(df$uso.plataforma)
     }
     if("apartado.libros" %in% columnas.en.df) {
-        df$apartado.libros <- escalar.a.valor.max(df$apartado.libros)
+        df$apartado.libros <- escalar.columna(df$apartado.libros)
     }
     return(df)
 }
 
+# TODO: Change this delete.me variable with the actual df
+summary(delete.me)
+df.scaled <- preparar.data.frame.nn(delete.me)
+summary(df.scaled)
+str(df.scaled)
+
 # --- 7. Entrenamiento de red neuronal
+# Para poder hacer una evaluacion de accuracy mas exacta, hay que dividir el
+#  training.set en training y validation sets
+nrow(df.scaled)
+nn.ind <- train.test.split(nrows = nrow(df.scaled))
+nn.training.set <- df.scaled[nn.ind == 1,]
+nn.val.set <- df.scaled[nn.ind == 2,]
+nrow(nn.training.set)
+nrow(nn.val.set)
 
+formula.nn.alumnos.1 <- es.desertor ~ promedio.preparatoria +
+                                    evaluacion.socioeconomica +
+                                    nota.conducta +
+                                    asistencias.totales +
+                                    resultados.examenes +
+                                    resultados.trabajos +
+                                    becado +
+                                    historial.pagos +
+                                    cambio.carrera
 
+set.seed(1234)
+red.neuronal.1 <- neuralnet(formula = formula.nn.alumnos.1,
+                            data = nn.training.set,
+                            hidden = c(30, 15),
+                            threshold = 0.01,
+                            stepmax = 1e+07,
+                            lifesign = "full",
+                            linear.output = F
+                            )
+
+# Revisar accuracy en el set de validacion
+resultado.red.neuronal.1 <- compute(red.neuronal.1, nn.val.set)
+attributes(resultado.red.neuronal.1)
+comparar.resultados.1 <- data.frame(actual = nn.val.set$es.desertor,
+                                    predicted = round(resultado.red.neuronal.1$net.result))
+comparar.resultados.1$error <- 
+  comparar.resultados.1$actual - comparar.resultados.1$predicted
+head(comparar.resultados.1)
+summary(comparar.resultados.1)
+nrow(comparar.resultados.1[comparar.resultados.1$actual == comparar.resultados.1$predicted,])
+nrow(nn.val.set)
 
 # --- 8. Predicciones para el set de test
+predicciones.test.red.neuronal.1 <- compute(red.neuronal.1,
+                                     preparar.data.frame.nn(test.set))
+head(round(predicciones.test.red.neuronal.1$net.result))
+nrow(predicciones.test.red.neuronal.1$net.result)
+nrow(test.set)
 
+test.set$es.desertor <- as.factor(round(predicciones.test.red.neuronal.1$net.result))
+summary(test.set[test.set$es.desertor == 0,])
 
 
 # 9. Algoritmo genetico para accion remedial
