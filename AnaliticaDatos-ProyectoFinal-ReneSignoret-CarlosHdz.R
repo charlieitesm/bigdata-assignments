@@ -18,8 +18,8 @@ getwd()
 
 # Modificar esto a la carpeta donde se encuentran los datasets
 dataset.folder.rene = "/home/renesignoret/Documents/bigdata-assignments/ProfessorFiles"
-dataset.folder.carlos = "C:/Users/Charlie/OneDrive\ -\ Instituto\ Tecnologico\ y\ de\ Estudios\ Superiores\ de\ Monterrey/BigData/FinalProject/ProfessorFiles"
-dataset.folder <- dataset.folder.rene
+dataset.folder.carlos = "/Users/carlosh/Desktop/CHARLIE/ITESM/CODE/bigdata-assignments/ProfessorFiles"
+dataset.folder <- dataset.folder.carlos
 
 setwd(dataset.folder)
 
@@ -50,8 +50,10 @@ load("AsistenciasTotales.R")
 #asistencias.totales[[1]]
 #dim(asistencias.totales[[1]])
 
-# Obtener todos los rows de las matrices de los 1000 alumnos, pero solo 12 materias (2 anios)
-# Codificamos las asistencias en un solo numero por alumno usando la suma de sus codigos de asistencia
+# Obtener todos los rows de las matrices de los 1000 alumnos, pero solo 12 
+# materias (2 anios)
+# Codificamos las asistencias en un solo numero por alumno usando la suma de sus 
+# codigos de asistencia
 #  Los que atendieron menos clases o tuvieron retardo, tendran menores puntajes
 #  2 A tiempo, 1 Retraso, 0 falto a clases
 asistencias.totales.filtered <- lapply(asistencias.totales, function(m){
@@ -161,8 +163,8 @@ load("HistorialPagos.R")
 #dim(registro.pagos[[1]])
 #head(registro.pagos)
 
-# Filtrar a 2 columnas que corresponden a los semestres y hacer una suma simple, los mas
-#  problematicos tendran un puntaje menor que los cumplidos
+# Filtrar a 2 columnas que corresponden a los semestres y hacer una suma simple,
+# los mas problematicos tendran un puntaje menor que los cumplidos
 registro.pagos.filtrados <- lapply(registro.pagos, function(m){
     sum(m[,1:2])
 })
@@ -179,22 +181,24 @@ datos.alumnos.integrados$cambio.carrera <- as.factor(cambio.carrera)
 head(datos.alumnos.integrados)
 
 
+
 # --- 2. Feature engineering - Escoger que features se usaran
 summary(datos.alumnos.integrados)
 
+# Salvamos los resultados completos antes de remover columnas
+save(datos.alumnos.integrados, file="datos.alumnos.integrados.noscaling.R")
 
 
 
-# --- 3. Feature scaling
 
-
-# --- 4. Dataframes para alumnos
-
+# --- 3. Dataframes para alumnos
 
 # Salvamos los resultados
-save(datos.alumnos.integrados, file="datos.alumnos.integrados.R")
+save(datos.alumnos.integrados, file="datos.alumnos.integrados.noscaling.R")
 
-# --- 5. Train/test split 90%/10%
+# --- 4. Train/test split 90%/10%
+
+
 
 #Usemos esta semilla para mantener datos constantes
 set.seed(1234)
@@ -211,9 +215,79 @@ summary(training.set)
 test.set <- datos.alumnos.integrados[ind == 2 , ]
 summary(test.set)
 
-# --- 6. Generacion de labels usando K-Means
+# --- 5. Generacion de labels usando K-Means
 
 
+
+# --- 2. Feature scaling en preparacion para Red neuronal
+summary(datos.alumnos.integrados)
+
+escalar.data.frame <- function(df) {
+    # Esta funcion revisara si el dataframe contiene las columnas a escalar y
+    #  si las tiene, procedera a escalarlas. Esto nos permite reutilizar la
+    #  la escalacion para diferentes dataframes
+    
+    escalar.a.valor.max <- function(columna) {
+        # Regresa el valor de las columnas escalados al valor maximo encontrado
+        columna / max(columna)
+    }
+    
+    columnas.en.df <- colnames(df)
+    
+    # La calificacion maxima en los examenes de admision es de 80, usemos eso para
+    #  escalar las columnas
+    if("admision.letras" %in% columnas.en.df) {
+        df$admision.letras <- df$admision.letras / 80
+    }
+    if("admision.numeros" %in% columnas.en.df) {
+        df$admision.numeros <- df$admision.numeros / 80
+    }
+    
+    # Promedio prepa dividido entre 100
+    if("promedio.preparatoria" %in% columnas.en.df) {
+        df$promedio.preparatoria <- df$promedio.preparatoria / 100
+    }
+    
+    # Maximo valor de asistencias para los 2 semestres es 2 (asistio a todas) * 12 * 32 = 768
+    if("asistencias.totales" %in% columnas.en.df) {
+        df$asistencias.totales <- df$asistencias.totales / (2 * 12 * 32)
+    }
+    
+    # Maximo valor para historial.pagos 2 * 4 * 2 (pago a tiempo, 4 pagos por semestre, 2 semestres)
+    if("historial.pagos" %in% columnas.en.df) {
+        df$historial.pagos <- df$historial.pagos / 16
+    }
+    
+    # Este campo es un factor, puede que no querramos escalarlo
+    # Evaluacion socioeconomica, los menos privilegiados tienen 4
+    #if("evaluacion.socioeconomica" %in% columnas.en.df) {
+    #    df$evaluacion.socioeconomica <- df / 4
+    #}
+    
+    # Para las siguientes, tomamos el maximo valor encontrado para poder escalarlo
+    if("edad.ingreso" %in% columnas.en.df) {
+        df$edad.ingreso <- escalar.a.valor.max(df$edad.ingreso)
+    }
+    if("nota.conducta" %in% columnas.en.df) {
+        df$nota.conducta <- escalar.a.valor.max(df$nota.conducta)
+    }
+    if("resultados.examenes" %in% columnas.en.df) {
+        df$resultados.examenes <- escalar.a.valor.max(df$resultados.examenes)
+    }
+    if("resultados.trabajos" %in% columnas.en.df) {
+        df$resultados.trabajos <- escalar.a.valor.max(df$resultados.trabajos)
+    }
+    if("uso.biblioteca" %in% columnas.en.df) {
+        df$uso.biblioteca <- escalar.a.valor.max(df$uso.biblioteca)
+    }
+    if("uso.plataforma" %in% columnas.en.df) {
+        df$uso.plataforma <- escalar.a.valor.max(df$uso.plataforma)
+    }
+    if("apartado.libros" %in% columnas.en.df) {
+        df$apartado.libros <- escalar.a.valor.max(df$apartado.libros)
+    }
+    return(df)
+}
 
 # --- 7. Entrenamiento de red neuronal
 
