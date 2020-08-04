@@ -202,22 +202,28 @@ summary(datos.alumnos.integrados)
 
 
 #Usemos esta semilla para mantener datos constantes
-train.test.split <- function(nrows, split=c(0.9, 0.1)) {
+train.test.split <- function(df, split=c(0.9, 0.1)) {
   set.seed(1234)
   ind <- sample(
       x = c(1, 2),
-      size = nrows,
+      size = nrow(df),
       replace = TRUE,
       prob = split
     )
-  return(ind)
+  train.set <- df[ind == 1,]
+  test.set <- df[ind == 2,]
+  
+  result = list("train.set" = train.set, "test.set" = test.set)
+  return(result)
 }
-ind = train.test.split(nrows = nrow(datos.alumnos.integrados),
-                       split = c(0.9, 0.1))
-training.set <- datos.alumnos.integrados[ind == 1, ]
+train.test = train.test.split(df = datos.alumnos.integrados,
+                              split = c(0.9, 0.1))
+training.set <- train.test$train.set
 summary(training.set)
-test.set <- datos.alumnos.integrados[ind == 2 , ]
+test.set <- train.test$test.set
 summary(test.set)
+nrow(training.set)
+nrow(test.set)
 
 # --- 5. Generacion de labels usando K-Means
 # ------ DELETE BEFORE MERGE TO MASTER ------
@@ -329,9 +335,9 @@ str(df.scaled)
 # Para poder hacer una evaluacion de accuracy mas exacta, hay que dividir el
 #  training.set en training y validation sets
 nrow(df.scaled)
-nn.ind <- train.test.split(nrows = nrow(df.scaled))
-nn.training.set <- df.scaled[nn.ind == 1,]
-nn.val.set <- df.scaled[nn.ind == 2,]
+nn.train.val <- train.test.split(df = df.scaled)
+nn.training.set <- nn.train.val$train.set
+nn.val.set <- nn.train.val$test.set
 nrow(nn.training.set)
 nrow(nn.val.set)
 
@@ -364,7 +370,7 @@ comparar.resultados.1$error <-
   comparar.resultados.1$actual - comparar.resultados.1$predicted
 head(comparar.resultados.1)
 summary(comparar.resultados.1)
-nrow(comparar.resultados.1[comparar.resultados.1$actual == comparar.resultados.1$predicted,])
+nrow(comparar.resultados.1[comparar.resultados.1$actual != comparar.resultados.1$predicted,])
 nrow(nn.val.set)
 
 # --- 8. Predicciones para el set de test
@@ -375,7 +381,7 @@ nrow(predicciones.test.red.neuronal.1$net.result)
 nrow(test.set)
 
 test.set$es.desertor <- as.factor(round(predicciones.test.red.neuronal.1$net.result))
-summary(test.set[test.set$es.desertor == 0,])
+summary(test.set[test.set$es.desertor == 1,])
 
 
 # 9. Algoritmo genetico para accion remedial
