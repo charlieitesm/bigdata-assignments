@@ -226,21 +226,9 @@ nrow(training.set)
 nrow(test.set)
 
 # --- 5. Generacion de labels usando K-Means
-# ------ DELETE BEFORE MERGE TO MASTER ------
-set.seed(1234)
-kmeans.results <- kmeans(x = training.set,
-                         centers = 4)
-delete.me <- training.set
-delete.me$cluster <- kmeans.results$cluster
-summary(delete.me[delete.me$cluster==1,])
-summary(delete.me[delete.me$cluster==2,])
-summary(delete.me[delete.me$cluster==3,])
-summary(delete.me[delete.me$cluster==4,])
 
-# El cluster 1 parece tener un score de asistencia menor asi que usemos eso como
-#  etiqueta para los desertores
-delete.me$es.desertor <- as.factor(ifelse(delete.me$cluster == 1, 1, 0))
-# ----- /DELETE ----
+
+
 
 # --- 2. Feature scaling en preparacion para Red neuronal
 
