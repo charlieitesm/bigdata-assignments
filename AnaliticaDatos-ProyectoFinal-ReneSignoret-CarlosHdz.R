@@ -12,7 +12,7 @@
 #
 # Agosto 2020
 ################################
-install.packages("neuralnet")
+#install.packages("neuralnet")
 library(neuralnet)
 
 getwd()
@@ -362,24 +362,31 @@ red.neuronal.1 <- neuralnet(formula = formula.nn.alumnos.1,
                             )
 
 # Revisar accuracy en el set de validacion
-resultado.red.neuronal.1 <- compute(red.neuronal.1, nn.val.set)
-attributes(resultado.red.neuronal.1)
-comparar.resultados.1 <- data.frame(actual = nn.val.set$es.desertor,
-                                    predicted = round(resultado.red.neuronal.1$net.result))
-comparar.resultados.1$error <- 
-  comparar.resultados.1$actual - comparar.resultados.1$predicted
-head(comparar.resultados.1)
-summary(comparar.resultados.1)
-nrow(comparar.resultados.1[comparar.resultados.1$actual != comparar.resultados.1$predicted,])
-nrow(nn.val.set)
+medir.metricas.red.neuronal = function(nn, val.set) {
+  resultado.red <- compute(nn, val.set)
+  real <- val.set$es.desertor
+  prediccion <- round(resultado.red$net.result)
+  error <- real - prediccion
+  true.positives <- sum(real == prediccion)
+  accuracy <- true.positives / nrow(val.set)
+  
+  return(list(
+    predicciones = data.frame(
+      actual = real,
+      predicted = prediccion,
+      error = error
+    ),
+    accuracy = accuracy,
+    error.total = sum(abs(error))
+  ))
+}
+
+metricas.nn.1 <- medir.metricas.red.neuronal(red.neuronal.1, nn.val.set)
+print(metricas.nn.1$accuracy) # Accuracy de 0.9223301
 
 # --- 8. Predicciones para el set de test
 predicciones.test.red.neuronal.1 <- compute(red.neuronal.1,
                                      preparar.data.frame.nn(test.set))
-head(round(predicciones.test.red.neuronal.1$net.result))
-nrow(predicciones.test.red.neuronal.1$net.result)
-nrow(test.set)
-
 test.set$es.desertor <- as.factor(round(predicciones.test.red.neuronal.1$net.result))
 summary(test.set[test.set$es.desertor == 1,])
 
