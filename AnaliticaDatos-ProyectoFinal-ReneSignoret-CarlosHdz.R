@@ -197,8 +197,7 @@ summary(datos.alumnos.integrados)
 # Salvamos los resultados
 #save(datos.alumnos.integrados, file="datos.alumnos.integrados.noscaling.R")
 
-# --- 4. Train/test split 90%/10%
-
+# --- 3. Train/test split 90%/10%
 
 
 #Usemos esta semilla para mantener datos constantes
@@ -225,14 +224,64 @@ summary(test.set)
 nrow(training.set)
 nrow(test.set)
 
-# --- 5. Generacion de labels usando K-Means
 
 
+# --- 4. Generacion de labels usando K-Means
+training.set <- subset(training.set, select = -c(apartado.libros, uso.biblioteca, uso.plataforma))
+
+wss <- vector()
+for (i in 1:15) {
+  set.seed(1234)
+  wss[i] <- sum(kmeans(training.set, 
+                       centers=i)$withinss)
+}
+plot(1:15, wss, type="b", xlab="Numero de clusters",
+     ylab="Error Standard")
+
+# Consideran el plot, el numero de centros indicado parece ser 4.
+centers <- 4
+
+set.seed(1234)
+kmeans.training <- kmeans(x = training.set, centers = centers)
+
+# asistencias maximas 768
+# grupo 3 y 4 parecen tener mejores resultados
+# determinamos que 1 -> riesgo alto
+# 2 -> riesgo medio
+# 3 -> riesgo minimo
+# 4 -> riesgo nulo
+data.enriched <- training.set
+data.enriched$cluster <- kmeans.training$cluster
+data.enriched$classification <- kmeans.training$cluster 
+head(data.enriched)
+
+names(data.enriched)
+
+plot(data.enriched[,c("asistencias.totales", "cluster") ], 
+     col = data.enriched$cluster)
+# 4 azul oscuro
+# 3 verde
+# 2 rojo
+# 1 negro
+plot(data.enriched[,c("asistencias.totales", "resultados.trabajos") ], 
+     col = data.enriched$cluster)
+
+plot(data.enriched[,c("asistencias.totales", "resultados.examenes") ], 
+     col = data.enriched$cluster)
+
+plot(data.enriched[,c("admision.numeros", "resultados.examenes") ], 
+     col = data.enriched$cluster)
+
+# Determinamos que los de riesgo mas alto, cluster 1, son los desertores
+data.enriched$es.desertor <- as.factor(ifelse(data.enriched$cluster == 1, 1, 0))
+
+summary(data.enriched[data.enriched$cluster==1,])
 
 
-# --- 2. Feature scaling en preparacion para Red neuronal
+# --- 5. Feature scaling en preparacion para Red neuronal
 
 preparar.data.frame.nn <- function(df) {
+
     # Esta funcion revisara si el dataframe contiene las columnas a escalar y
     #  si las tiene, procedera a escalarlas. Esto nos permite reutilizar la
     #  la escalacion para diferentes dataframes.
@@ -313,13 +362,14 @@ preparar.data.frame.nn <- function(df) {
     return(df)
 }
 
-# TODO: Change this delete.me variable with the actual df
-summary(delete.me)
-df.scaled <- preparar.data.frame.nn(delete.me)
+df.scaled <- preparar.data.frame.nn(data.enriched)
 summary(df.scaled)
 str(df.scaled)
 
-# --- 7. Entrenamiento de red neuronal
+
+
+
+# --- 6. Entrenamiento de red neuronal
 # Para poder hacer una evaluacion de accuracy mas exacta, hay que dividir el
 #  training.set en training y validation sets
 nrow(df.scaled)
@@ -372,12 +422,11 @@ medir.metricas.red.neuronal = function(nn, val.set) {
 metricas.nn.1 <- medir.metricas.red.neuronal(red.neuronal.1, nn.val.set)
 print(metricas.nn.1$accuracy) # Accuracy de 0.9223301
 
-# --- 8. Predicciones para el set de test
+# --- 7. Predicciones para el set de test
 predicciones.test.red.neuronal.1 <- compute(red.neuronal.1,
                                      preparar.data.frame.nn(test.set))
 test.set$es.desertor <- as.factor(round(predicciones.test.red.neuronal.1$net.result))
-summary(test.set[test.set$es.desertor == 1,])
-
+summary(test.set[test.set$es.desertor==1,])
 
 # 9. Algoritmo genetico para accion remedial
 
