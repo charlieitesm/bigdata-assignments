@@ -216,11 +216,67 @@ test.set <- datos.alumnos.integrados[ind == 2 , ]
 summary(test.set)
 
 # --- 5. Generacion de labels usando K-Means
+test <- training.set
+training.set <- subset(training.set, select = -c(apartado.libros, uso.biblioteca, uso.plataforma))
+
+wss <- vector()
+for (i in 1:15) {
+  set.seed(1234)
+  wss[i] <- sum(kmeans(training.set, 
+                       centers=i)$withinss)
+}
+plot(1:15, wss, type="b", xlab="Numero de clusters",
+     ylab="Error Standard")
+
+# Consideran el plot, el numero de centros indicado parece ser 4.
+centers <- 4
+
+set.seed(1234)
+kmeans.training <- kmeans(x = training.set, centers = centers)
+
+# asistencias maximas 768
+# grupo 3 y 4 parecen tener mejores resultados
+# determinamos que 1 -> riesgo alto
+# 2 -> riesgo medio
+# 3 -> riesgo minimo
+# 4 -> riesgo nulo
+head(clusters.4)
+data.enriched <- training.set
+data.enriched$cluster <- kmeans.training$cluster
+data.enriched$classification <- kmeans.training$cluster 
+head(data.enriched)
+data.enriched[data.enriched$cluster==4,]$classification <- "riesgo.nulo"
+data.enriched[data.enriched$cluster==3 ,]$classification <- "riesgo.minimo"
+data.enriched[data.enriched$cluster==2,]$classification <- "riesgo.medio"
+data.enriched[data.enriched$cluster==1,]$classification <- "riesgo.alto"
+
+library(rpart)
+library(party)
+names(data.enriched)
+
+plot(data.enriched[,c("asistencias.totales", "cluster") ], 
+     col = data.enriched$cluster)
+# 4 azul oscuro
+# 3 verde
+# 2 rojo
+# 1 negro
+plot(data.enriched[,c("asistencias.totales", "resultados.trabajos") ], 
+     col = data.enriched$cluster)
+
+plot(data.enriched[,c("asistencias.totales", "resultados.examenes") ], 
+     col = data.enriched$cluster)
+
+plot(data.enriched[,c("admision.numeros", "resultados.examenes") ], 
+     col = data.enriched$cluster)
+
+data.enriched$desertor <- ifelse(data.enriched$cluster == 1, 1, 0)
+
 
 
 
 # --- 2. Feature scaling en preparacion para Red neuronal
 summary(datos.alumnos.integrados)
+
 
 escalar.data.frame <- function(df) {
     # Esta funcion revisara si el dataframe contiene las columnas a escalar y
