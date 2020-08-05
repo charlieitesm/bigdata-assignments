@@ -245,7 +245,6 @@ data.enriched <- training.set
 data.enriched$cluster <- kmeans.training$cluster
 data.enriched$classification <- kmeans.training$cluster 
 head(data.enriched)
-data.enriched
 data.enriched[data.enriched$cluster==4,]$classification <- "riesgo.nulo"
 data.enriched[data.enriched$cluster==3 ,]$classification <- "riesgo.minimo"
 data.enriched[data.enriched$cluster==2,]$classification <- "riesgo.medio"
@@ -269,6 +268,11 @@ plot(data.enriched[,c("asistencias.totales", "resultados.examenes") ],
 
 plot(data.enriched[,c("admision.numeros", "resultados.examenes") ], 
      col = data.enriched$cluster)
+
+data.enriched$desertor <- ifelse(data.enriched$cluster == 1, 1, 0)
+
+
+
 
 # --- 2. Feature scaling en preparacion para Red neuronal
 summary(datos.alumnos.integrados)
