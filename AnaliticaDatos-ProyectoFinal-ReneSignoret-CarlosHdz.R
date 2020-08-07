@@ -20,7 +20,7 @@ getwd()
 # Modificar esto a la carpeta donde se encuentran los datasets
 dataset.folder.rene = "/home/renesignoret/Documents/bigdata-assignments/ProfessorFiles"
 dataset.folder.carlos = "/Users/carlosh/Desktop/CHARLIE/ITESM/CODE/bigdata-assignments/ProfessorFiles"
-dataset.folder <- dataset.folder.carlos
+dataset.folder <- dataset.folder.rene
 
 setwd(dataset.folder)
 
@@ -425,12 +425,19 @@ predicciones.test.red.neuronal.1 <- compute(red.neuronal.1,
 test.set$es.desertor <- as.factor(round(predicciones.test.red.neuronal.1$net.result))
 summary(test.set[test.set$es.desertor==1,])
 
+
+
+
+
 # 9. Algoritmo genetico para accion remedial
 
-install.packages("genalg")
+
+
+
+# install.packages("genalg")
 library(genalg)
 alumnos.riesgo <- data.frame
-alumnos.riesgo <- data.enriched[data.enriched$desertor == 1,]
+alumnos.riesgo <- test.set[test.set$es.desertor == 1,]
 colnames(alumnos.riesgo)
 presupuesto <- 10000
 acciones.correctivas <- data.frame(
@@ -438,10 +445,8 @@ acciones.correctivas <- data.frame(
   costo = c(20, 50, 100, 20, 20, 25, 5, 10),
   nivel.ayuda = c(5, 10, 30, 5, 5, 10, 3, 4)
 )
-colnames(datos.alumnos.integrados)
-summary(datos.alumnos.integrados)
+acciones.correctivas
 nrow(alumnos.riesgo)
-alumnos.riesgo[2,"classification"]
 fitness.generic <- function (x) {
   #costo <- x %*% acciones.correctivas$costo * NROW(alumnos.riesgo)
   costo <- 0
@@ -508,7 +513,7 @@ fitness.generic <- function (x) {
 }
 
 ?rbga.bin
-ga.tree <- rbga.bin(size = (nrow(acciones.correctivas) * nrow(alumnos.riesgo)), popSize = nrow(alumnos.riesgo), iters=10,
+ga.tree <- rbga.bin(size = (nrow(acciones.correctivas) * nrow(alumnos.riesgo)), popSize = nrow(alumnos.riesgo), iters=100,
                     mutationChance = 0.1, elitism = 4,  
                     evalFunc = fitness.generic,
                     verbose = T)
@@ -531,5 +536,3 @@ for (i in 1: NROW(alumnos.riesgo)) {
   alumnos.riesgo[i, "accion"] <- accion
 }
 alumnos.riesgo$accion
-acciones = "beca.alta + vale.transporte"
-
