@@ -39,9 +39,6 @@ datos.alumnos.integrados <- perfil.alumnos
 datos.alumnos.integrados$genero <- as.factor(datos.alumnos.integrados$genero)
 datos.alumnos.integrados$evaluacion.socioeconomica <- as.factor(datos.alumnos.integrados$evalucion.socioeconomica)
 datos.alumnos.integrados$evalucion.socioeconomica <- NULL # Arreglar typo en nombre columna
-colnames(datos.alumnos.integrados)
-
-
 
 load("AsistenciasTotales.R")
 #class(asistencias.totales)  # List
@@ -129,7 +126,7 @@ uso.plataforma.filtrado <- lapply(uso.plataforma.totales, function(m){
 #head(uso.plataforma.filtrado)
 datos.alumnos.integrados$uso.plataforma <- unlist(uso.plataforma.filtrado)
 head(datos.alumnos.integrados)
-
+summary(datos.alumnos.integrados)
 
 
 load("ApartadoDeLibros.R")
@@ -355,4 +352,109 @@ escalar.data.frame <- function(df) {
 
 # 9. Algoritmo genetico para accion remedial
 
+install.packages("genalg")
+library(genalg)
+alumnos.riesgo <- data.frame
+alumnos.riesgo <- data.enriched[data.enriched$desertor == 1,]
+colnames(alumnos.riesgo)
+presupuesto <- 10000
+acciones.correctivas <- data.frame(
+  accion = c("apoyo.economico","beca.media", "beca.alta","asesoria", "mentoria", "intervencion", "clases.remotas", "vale.transporte" ),
+  costo = c(20, 50, 100, 20, 20, 25, 5, 10),
+  nivel.ayuda = c(5, 10, 30, 5, 5, 10, 3, 4)
+)
+colnames(datos.alumnos.integrados)
+summary(datos.alumnos.integrados)
+nrow(alumnos.riesgo)
+alumnos.riesgo[2,"classification"]
+fitness.generic <- function (x) {
+  #costo <- x %*% acciones.correctivas$costo * NROW(alumnos.riesgo)
+  costo <- 0
+  ayuda <- 0
+ 
+  
+  for ( i in 1: NROW(alumnos.riesgo)) {
+    #el accion index nos permite acceder a cada genoma por cada alumno, asi podemos evaluar las acciones
+    #segun el alumno
+    accion.index <- ((i-1) * nrow(acciones.correctivas))
+    for (j in 1: NROW(acciones.correctivas)) {
+      if (x[j + accion.index] == 1) {
+        costo <- acciones.correctivas$costo[j] + costo
+        ayuda <- acciones.correctivas$nivel.ayuda[j] + ayuda
+      }
+    }
+    #Evaluacion economica
+    if (alumnos.riesgo[i,"evaluacion.socioeconomica"] == 4 ) {
+      if (alumnos.riesgo[i,"becado"] == 1 && (x[accion.index + 3] == 1 ))  {
+        # El alumno ya tenia beca, darle otra probablemente no es la solucion
+        ayuda <- ayuda-100
+      } else {
+        if (alumnos.riesgo[i,"historial.pagos"] <= 14) {
+          if (x[accion.index +3] ==1) {
+            ayuda <- ayuda+50
+          }
+        } else {
+          if (x[accion.index + 1] == 1 ) {
+            ayuda <- ayuda+50
+          }
+        }
+      }
+    }
+    
+    # Asesorias y mentorias
+    if (alumnos.riesgo[i,"resultados.examenes"] <= 13 && x[accion.index + 5] == 1) {
+      ayuda <- ayuda +50
+    }
+    if (alumnos.riesgo[i,"resultados.trabajos"] <= 13 && x[accion.index + 4] ==1) {
+      ayuda <- ayuda +50
+    }
+    
+    # Faltas pero buenos resultados en examenes o trabajos
+    if (alumnos.riesgo[i, "asistencias.totales"] < 650 && (alumnos.riesgo[i,"resultados.examenes"]>14 
+                                                        || alumnos.riesgo[i,"resultados.trabajos"] > 14)) {
+      #si el alumno es aplicado, pero no asiste seguido, probablemente tiene razones por las cuales no asistir
+      # y clases remotas le permitirian continuar con sus estudios.
+      if (x[accion.index + 7] == 1) {
+        ayuda <- ayuda + 90
+      }
+      # Muchas veces el transporte tambien influye.
+      if (x[accion.index + 8] == 1) {
+        ayuda <- ayuda + 30
+      }
+    }
+    
+  }
+  # Si se excede el presupuesto, pues no es una buena opcion
+  if (costo > presupuesto) {
+    return (1000)
+  } 
+  return (-ayuda)
+  
+}
+
+?rbga.bin
+ga.tree <- rbga.bin(size = (nrow(acciones.correctivas) * nrow(alumnos.riesgo)), popSize = nrow(alumnos.riesgo), iters=10,
+                    mutationChance = 0.1, elitism = 4,  
+                    evalFunc = fitness.generic,
+                    verbose = T)
+
+#Obtenemos el mejor cromosoma. 
+best <- ga.tree$population[ga.tree$evaluations == min(ga.tree$best),]
+
+sum(best)
+
+#Ponemos las acciones preventivas en una columna nueva
+alumnos.riesgo["accion"] <- vector()
+for (i in 1: NROW(alumnos.riesgo)) {
+  accion.index <- ((i-1) * nrow(acciones.correctivas))
+  accion <- " "
+  for (j in 1: NROW(acciones.correctivas)) {
+    if (best[j + accion.index] == 1) {
+      accion <- paste(acciones.correctivas$accion[j], accion, sep = " + ")
+    }
+  }
+  alumnos.riesgo[i, "accion"] <- accion
+}
+alumnos.riesgo$accion
+acciones = "beca.alta + vale.transporte"
 
