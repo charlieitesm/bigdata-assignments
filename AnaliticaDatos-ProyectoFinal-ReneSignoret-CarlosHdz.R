@@ -7,7 +7,7 @@
 #
 # Proyecto Final
 #
-# Rene Signoret - A
+# Rene Signoret - A00354797
 # Carlos E. Hernandez - A01181616
 #
 # Agosto 2020
@@ -17,10 +17,8 @@ library(neuralnet)
 
 getwd()
 
-# Modificar esto a la carpeta donde se encuentran los datasets
-dataset.folder.rene = "/home/renesignoret/Documents/bigdata-assignments/ProfessorFiles"
-dataset.folder.carlos = "/Users/carlosh/Desktop/CHARLIE/ITESM/CODE/bigdata-assignments/ProfessorFiles"
-dataset.folder <- dataset.folder.rene
+# IMPORTANTE: Modificar esto a la carpeta donde se encuentran los datasets
+dataset.folder <- ""
 
 setwd(dataset.folder)
 
@@ -536,3 +534,5 @@ for (i in 1: NROW(alumnos.riesgo)) {
   alumnos.riesgo[i, "accion"] <- accion
 }
 alumnos.riesgo$accion
+
+head(alumnos.riesgo)
